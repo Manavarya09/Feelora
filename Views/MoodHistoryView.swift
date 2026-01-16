@@ -127,6 +127,10 @@ struct WeeklySummaryView: View {
                     Text("Current Streak: \(summary.streak) days")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
+                    
+                    Text("Trend: \(summary.trend.description)")
+                        .font(.subheadline)
+                        .foregroundColor(summary.trend.color)
                 }
                 
                 Spacer()

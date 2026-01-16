@@ -16,6 +16,7 @@ struct MoodIndicator: View {
             if let mood = mood {
                 Text(mood.icon)
                     .font(.system(size: 40))
+                    .accessibilityHidden(true) // Icon is decorative
                 
                 Text(mood.rawValue)
                     .font(.headline)
@@ -29,6 +30,7 @@ struct MoodIndicator: View {
             } else {
                 Text("🤔")
                     .font(.system(size: 40))
+                    .accessibilityHidden(true)
                 
                 Text("Analyzing...")
                     .font(.headline)
@@ -41,6 +43,25 @@ struct MoodIndicator: View {
                 .fill(Color(.systemBackground).opacity(0.8))
                 .shadow(radius: 4)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityValue(accessibilityValue)
+    }
+    
+    private var accessibilityLabel: String {
+        if let mood = mood {
+            return "Current mood is \(mood.rawValue)"
+        } else {
+            return "Analyzing mood"
+        }
+    }
+    
+    private var accessibilityValue: String {
+        if let confidence = confidence {
+            return "Confidence \(Int(confidence * 100)) percent"
+        } else {
+            return ""
+        }
     }
 }
 

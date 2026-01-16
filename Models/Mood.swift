@@ -53,4 +53,50 @@ enum Mood: String, CaseIterable, Codable {
         case .stressed: return "😫"
         }
     }
+    
+    // Animation properties for emotional pacing
+    var breathingDuration: Double {
+        switch self {
+        case .happy: return 3.0  // Quick, lively
+        case .calm: return 6.0   // Slow, steady
+        case .neutral: return 4.0 // Balanced
+        case .anxious: return 2.0 // Faster, more agitated
+        case .sad: return 5.0     // Slow, melancholic
+        case .stressed: return 1.5 // Rapid, tense
+        }
+    }
+    
+    var springResponse: Double {
+        switch self {
+        case .happy: return 0.5
+        case .calm: return 1.0
+        case .neutral: return 0.7
+        case .anxious: return 0.3
+        case .sad: return 0.8
+        case .stressed: return 0.2
+        }
+    }
+    
+    var dampingFraction: Double {
+        switch self {
+        case .happy: return 0.6
+        case .calm: return 0.8
+        case .neutral: return 0.7
+        case .anxious: return 0.4
+        case .sad: return 0.9
+        case .stressed: return 0.3
+        }
+    }
+    
+    // Sentiment value for trend analysis (-1 to 1)
+    var sentimentValue: Double {
+        switch self {
+        case .happy: return 0.8
+        case .calm: return 0.4
+        case .neutral: return 0.0
+        case .anxious: return -0.3
+        case .sad: return -0.7
+        case .stressed: return -0.9
+        }
+    }
 }

@@ -10,29 +10,33 @@ import SwiftUI
 struct AnimatedBackground: View {
     let mood: Mood?
     
-    @State private var phase = 0.0
+    @State private var breathingPhase = 0.0
+    @State private var floatingOffset: CGFloat = 0.0
     
     var body: some View {
         ZStack {
             if let mood = mood {
-                // Gradient background
+                // Gradient background with subtle breathing
                 LinearGradient(gradient: mood.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
                     .ignoresSafeArea()
+                    .opacity(0.8 + 0.2 * sin(breathingPhase))
+                    .animation(.easeInOut(duration: mood.breathingDuration).repeatForever(autoreverses: true), value: breathingPhase)
                 
-                // Animated shapes
+                // Floating shapes with physics-based motion
                 GeometryReader { geometry in
-                    ForEach(0..<5) { index in
+                    ForEach(0..<3) { index in
                         Circle()
-                            .fill(mood.color.opacity(0.1))
-                            .frame(width: 100 + CGFloat(index * 20), height: 100 + CGFloat(index * 20))
+                            .fill(mood.color.opacity(0.15))
+                            .frame(width: 80 + CGFloat(index * 30), height: 80 + CGFloat(index * 30))
                             .offset(
-                                x: sin(phase + Double(index)) * geometry.size.width * 0.1,
-                                y: cos(phase + Double(index)) * geometry.size.height * 0.1
+                                x: sin(breathingPhase + Double(index) * .pi / 3) * geometry.size.width * 0.08,
+                                y: cos(breathingPhase + Double(index) * .pi / 3) * geometry.size.height * 0.08 + floatingOffset
                             )
                             .animation(
-                                Animation.easeInOut(duration: 3 + Double(index))
-                                    .repeatForever(autoreverses: true),
-                                value: phase
+                                Animation.spring(response: mood.springResponse, dampingFraction: mood.dampingFraction)
+                                    .repeatForever(autoreverses: true)
+                                    .delay(Double(index) * 0.5),
+                                value: breathingPhase
                             )
                     }
                 }
@@ -43,9 +47,25 @@ struct AnimatedBackground: View {
             }
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 4).repeatForever(autoreverses: true)) {
-                phase = .pi * 2
+            startBreathingAnimation()
+        }
+        .onChange(of: mood) { _ in
+            // Smooth transition when mood changes
+            withAnimation(.spring(response: 1.0, dampingFraction: 0.8)) {
+                floatingOffset = CGFloat.random(in: -10...10)
             }
+        }
+        .accessibilityHidden(true) // Background animations are decorative
+        .prefersDefaultColorScheme() // Respect system appearance
+    }
+    
+    private func startBreathingAnimation() {
+        if UIAccessibility.isReduceMotionEnabled {
+            // No animation for reduced motion
+            return
+        }
+        withAnimation(.easeInOut(duration: mood?.breathingDuration ?? 4.0).repeatForever(autoreverses: true)) {
+            breathingPhase = .pi * 2
         }
     }
 }

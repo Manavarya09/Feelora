@@ -30,10 +30,52 @@ class HistoryViewModel: ObservableObject {
         let dominantMood = moodCounts.max(by: { $0.value < $1.value })?.key
         
         let streak = calculateStreak()
+        let trend = detectMoodTrend(weekEntries)
         
-        let reflection = generateReflection(dominantMood: dominantMood, entryCount: weekEntries.count)
+        let reflection = generateReflection(dominantMood: dominantMood, entryCount: weekEntries.count, trend: trend)
         
-        return WeeklySummary(moodCounts: moodCounts, dominantMood: dominantMood, streak: streak, reflection: reflection)
+        return WeeklySummary(moodCounts: moodCounts, dominantMood: dominantMood, streak: streak, trend: trend, reflection: reflection)
+    }
+    
+    private func detectMoodTrend(_ entries: [Entry]) -> MoodTrend {
+        let sortedEntries = entries.sorted(by: { $0.date < $1.date })
+        guard sortedEntries.count >= 3 else { return .stable }
+        
+        // Calculate weighted average sentiment over time
+        let sentiments = sortedEntries.compactMap { entry -> Double? in
+            guard let mood = entry.mood, let confidence = entry.confidence else { return nil }
+            return mood.sentimentValue * confidence
+        }
+        
+        if sentiments.count < 3 { return .stable }
+        
+        let firstHalf = sentiments.prefix(sentiments.count / 2)
+        let secondHalf = sentiments.suffix(sentiments.count / 2)
+        
+        let firstAvg = firstHalf.reduce(0, +) / Double(firstHalf.count)
+        let secondAvg = secondHalf.reduce(0, +) / Double(secondHalf.count)
+        
+        let difference = secondAvg - firstAvg
+        
+        if difference > 0.2 { return .improving }
+        else if difference < -0.2 { return .declining }
+        else { return .stable }
+    }
+    
+    private func generateReflection(dominantMood: Mood?, entryCount: Int, trend: MoodTrend) -> String {
+        let moodText = dominantMood?.rawValue.lowercased() ?? "mixed"
+        let trendText: String
+        
+        switch trend {
+        case .improving:
+            trendText = "and your mood seems to be improving over the week."
+        case .declining:
+            trendText = "though there might be some challenges emerging."
+        case .stable:
+            trendText = "with a consistent emotional pattern."
+        }
+        
+        return "This week, you felt mostly \(moodText) across \(entryCount) entries, \(trendText) Remember, every emotion is valid and temporary."
     }
     
     private func calculateStreak() -> Int {
@@ -66,5 +108,26 @@ struct WeeklySummary {
     let moodCounts: [Mood?: Int]
     let dominantMood: Mood?
     let streak: Int
+    let trend: MoodTrend
     let reflection: String
+}
+
+enum MoodTrend {
+    case improving, declining, stable
+    
+    var description: String {
+        switch self {
+        case .improving: return "Improving"
+        case .declining: return "Declining"
+        case .stable: return "Stable"
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .improving: return .green
+        case .declining: return .red
+        case .stable: return .blue
+        }
+    }
 }
